@@ -1,0 +1,103 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="dashboard-header">
+    <h2>Total Balance: {{ total_balance | default(0) | round(2) }}</h2>
+</div>
+
+<div class="card-grid">
+    <div class="card summary-card">
+        <h4>My Salary</h4>
+        <p>₹{{ my_salary_total | default(0) }}</p>
+    </div>
+    <div class="card summary-card">
+        <h4>Family Salary</h4>
+        <p>₹{{ family_salary_total | default(0) }}</p>
+    </div>
+    <div class="card summary-card">
+        <h4>Other Income</h4>
+        <p>₹{{ other_income_total | default(0) }}</p>
+    </div>
+    <div class="card summary-card expense-card">
+        <h4>Expenses</h4>
+        <p>₹{{ expense_total | default(0) }}</p>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Category-wise Expense Distribution</h3>
+    <canvas id="pieChart"></canvas>
+</div>
+
+<div class="card">
+    <h3>Monthly Expense Trend</h3>
+    <canvas id="trendChart"></canvas>
+</div>
+
+<div class="card">
+    <h3>Insights</h3>
+    <ul>
+    {% for ins in insights %}
+        <li>{{ ins }}</li>
+    {% else %}
+        <li>No insights available yet.</li>
+    {% endfor %}
+    </ul>
+</div>
+
+<h3>Recent Transactions</h3>
+<div class="masonry">
+{% for t in transactions %}
+    <div class="card tx-card {{ 'income-card' if t.type=='income' else 'expense-card' }}">
+        <div class="tx-row">
+            <div class="tx-date">{{ t.date.strftime('%Y-%m-%d') }}</div>
+            <div class="tx-amount">₹{{ "{:,.2f}".format(t.amount) }}</div>
+        </div>
+        <div class="tx-cat">{{ t.category.replace('_',' ').title() }} {% if t.payment_method %} • {{ t.payment_method }}{% endif %}</div>
+        <div class="tx-note">{{ t.note or "" }}</div>
+        <div class="tx-tags">
+        {% for tag in t.tags %}
+            <span class="tag">{{ tag.name }}</span>
+        {% endfor %}
+        </div>
+        <div class="tx-actions">
+        {% if t.receipt %}
+            <a href="{{ url_for('uploaded_file', filename=t.receipt) }}" target="_blank" class="btn btn-sm">Receipt</a>
+        {% endif %}
+        <a href="{{ url_for('edit_transaction', id=t.id) }}" class="btn btn-sm btn-edit">Edit</a>
+        <a href="{{ url_for('delete_transaction', id=t.id) }}" class="btn btn-sm btn-delete" onclick="return confirm('Delete?')">Delete</a>
+        </div>
+    </div>
+{% else %}
+<p>No transactions yet.</p>
+{% endfor %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const pieLabels = {{ pie_labels | tojson }};
+const pieValues = {{ pie_values | tojson }};
+new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: {
+        labels: pieLabels,
+        datasets: [{ data: pieValues, backgroundColor: ['#4CAF50','#2196F3','#FFC107','#F44336','#9C27B0','#00BCD4'] }]
+    },
+    options: { responsive:true, plugins:{legend:{position:'bottom'}} }
+});
+
+const labels = {{ trend_labels | tojson }};
+const values = {{ trend_values | tojson }};
+const income_values = {{ income_trend | tojson }};
+new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [
+            { label:'Expenses', data: values, borderColor:'#F44336', fill:false },
+            { label:'Income', data: income_values, borderColor:'#4CAF50', fill:false }
+        ]
+    },
+    options: { responsive:true, plugins:{legend:{position:'bottom'}} }
+});
+</script>
+{% endblock %}

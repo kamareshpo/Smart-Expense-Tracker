@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="form-card">
+    <h2>Edit Transaction</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <label>Type</label>
+        <select name="type" required>
+            <option value="income" {% if transaction.type=='income' %}selected{% endif %}>Income</option>
+            <option value="expense" {% if transaction.type=='expense' %}selected{% endif %}>Expense</option>
+        </select>
+
+        <label>Category</label>
+        <select name="category" required>
+            {% for cat in categories %}
+                <option value="{{ cat }}" {% if transaction.category==cat %}selected{% endif %}>{{ cat.replace('_',' ').title() }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Amount</label>
+        <input type="number" step="0.01" name="amount" value="{{ transaction.amount }}" required>
+
+        <label>Payment Method</label>
+        <select name="payment_method">
+            {% for method in ['Cash','Credit Card','UPI','Bank Transfer'] %}
+                <option value="{{ method }}" {% if transaction.payment_method==method %}selected{% endif %}>{{ method }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Recurring</label>
+        <select name="recurring">
+            <option value="" {% if not transaction.recurring %}selected{% endif %}>None</option>
+            <option value="daily" {% if transaction.recurring=='daily' %}selected{% endif %}>Daily</option>
+            <option value="weekly" {% if transaction.recurring=='weekly' %}selected{% endif %}>Weekly</option>
+            <option value="monthly" {% if transaction.recurring=='monthly' %}selected{% endif %}>Monthly</option>
+        </select>
+
+        <label>Tags (comma separated)</label>
+        <input type="text" name="tags" value="{{ transaction.tags|join(',') }}">
+
+        <label>Receipt (image/pdf)</label>
+        {% if transaction.receipt %}
+            <a href="{{ url_for('uploaded_file', filename=transaction.receipt) }}" target="_blank">Current File</a>
+        {% endif %}
+        <input type="file" name="receipt" accept="image/*,application/pdf">
+
+        <label>Note</label>
+        <input type="text" name="note" value="{{ transaction.note }}">
+
+        <button type="submit" class="btn-submit">Update Transaction</button>
+    </form>
+</div>
+{% endblock %}
